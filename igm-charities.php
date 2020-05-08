@@ -6,7 +6,7 @@
  * Plugin Name:       Interactive Geo Maps - Charities Map Addon
  * Plugin URI:        https://interactivegeomaps.com
  * Description:       Custom plugin to add options to render custom taxonomy and custom post types in map
- * Version:           1.0.0
+ * Version:           1.0.1
  * Author:            Carlos Moreira
  * Author URI:        https://cmoreira.net/
  * License:           GPL-2.0+
@@ -53,6 +53,11 @@ function igm_charities_model( $model ) {
 				'title' => __( 'Meta Field', 'igm-charities' ),
 				'desc'  => __( 'Identifier for meta field with donated value to make calculations from.', 'igm-charities' ),
 			],
+			'igmc_meta_is_acf'     => [
+				'type'  => 'switcher',
+				'title' => __( 'Is it from ACF?', 'igm-charities' ),
+				'desc'  => __( 'Enable this if the above meta field is added with ACF.', 'igm-charities' ),
+			],
 			'igmc_action_content' => [
 				'type'    => 'select',
 				'title'   => __( 'Action Content', 'igm-charities' ),
@@ -88,6 +93,7 @@ function igm_charities_meta( $meta ) {
 		$opts   = get_option( 'interactive-maps' );
 		$tax    = isset( $opts['igmc_taxonomy'] ) ? $opts['igmc_taxonomy'] : '';
 		$metaf  = isset( $opts['igmc_meta'] ) ? $opts['igmc_meta'] : '';
+		$acf    = isset( $opts['igmc_meta_is_acf'] ) ? $opts['igmc_meta_is_acf'] : false;
 		$action = isset( $opts['igmc_action_content'] ) ? $opts['igmc_action_content'] : 'open_url';
 		$empty  = isset( $opts['igmc_hide_empty'] ) ? $opts['igmc_hide_empty'] : false;
 		$cache  = isset( $opts['igmc_cache'] ) ? $opts['igmc_cache'] : false;
@@ -140,7 +146,12 @@ function igm_charities_meta( $meta ) {
 				// loop posts.
 				foreach ( $posts as $post ) {
 
-					$metaval  = get_post_meta( $post->ID, $metaf, true );
+					if ( $acf && function_exists( 'get_field' ) ) {
+						$metaval = get_field( $metaf, $post->ID, true );
+					} else {
+						$metaval = get_post_meta( $post->ID, $metaf, true );
+					}
+
 					$posterms = get_the_terms( $post->ID, $tax );
 					$totterms = count( $posterms );
 
