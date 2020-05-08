@@ -43,6 +43,11 @@ function igm_charities_model( $model ) {
 				'title' => __( 'Taxonomy', 'igm-charities' ),
 				'desc'  => __( 'Taxonomy to read the data from', 'igm-charities' ),
 			],
+			'igmc_cpt'            => [
+				'type'  => 'text',
+				'title' => __( 'Custom Post Type', 'igm-charities' ),
+				'desc'  => __( 'CPT to read the data from', 'igm-charities' ),
+			],
 			'igmc_hide_empty'     => [
 				'type'  => 'switcher',
 				'title' => __( 'Hide Empty', 'igm-charities' ),
@@ -53,7 +58,7 @@ function igm_charities_model( $model ) {
 				'title' => __( 'Meta Field', 'igm-charities' ),
 				'desc'  => __( 'Identifier for meta field with donated value to make calculations from.', 'igm-charities' ),
 			],
-			'igmc_meta_is_acf'     => [
+			'igmc_meta_is_acf'    => [
 				'type'  => 'switcher',
 				'title' => __( 'Is it from ACF?', 'igm-charities' ),
 				'desc'  => __( 'Enable this if the above meta field is added with ACF.', 'igm-charities' ),
@@ -90,13 +95,14 @@ function igm_charities_meta( $meta ) {
 	if ( isset( $meta['use_charities'] ) && $meta['use_charities'] ) {
 
 		// get option values.
-		$opts   = get_option( 'interactive-maps' );
-		$tax    = isset( $opts['igmc_taxonomy'] ) ? $opts['igmc_taxonomy'] : '';
-		$metaf  = isset( $opts['igmc_meta'] ) ? $opts['igmc_meta'] : '';
-		$acf    = isset( $opts['igmc_meta_is_acf'] ) ? $opts['igmc_meta_is_acf'] : false;
-		$action = isset( $opts['igmc_action_content'] ) ? $opts['igmc_action_content'] : 'open_url';
-		$empty  = isset( $opts['igmc_hide_empty'] ) ? $opts['igmc_hide_empty'] : false;
-		$cache  = isset( $opts['igmc_cache'] ) ? $opts['igmc_cache'] : false;
+		$opts      = get_option( 'interactive-maps' );
+		$tax       = isset( $opts['igmc_taxonomy'] ) ? $opts['igmc_taxonomy'] : '';
+		$metaf     = isset( $opts['igmc_meta'] ) ? $opts['igmc_meta'] : '';
+		$acf       = isset( $opts['igmc_meta_is_acf'] ) ? $opts['igmc_meta_is_acf'] : false;
+		$action    = isset( $opts['igmc_action_content'] ) ? $opts['igmc_action_content'] : 'open_url';
+		$empty     = isset( $opts['igmc_hide_empty'] ) ? $opts['igmc_hide_empty'] : false;
+		$cache     = isset( $opts['igmc_cache'] ) ? $opts['igmc_cache'] : false;
+		$post_type = isset( $opts['igmc_cpt'] ) ? $opts['igmc_cpt'] : 'any';
 
 		// check for cache first.
 		if ( $cache ) {
@@ -131,16 +137,22 @@ function igm_charities_meta( $meta ) {
 					'useDefaults' => '1',
 				];
 
-				$args  = array(
-					'nopaging'  => true,
-					'post_type' => 'any',
-					'taxonomy'  => $tax,
-					'term'      => $term->slug,
+				$args = array(
+					'posts_per_page' => -1,
+					'post_status'    => 'publish',
+					'post_type'      => $post_type,
+					'tax_query'      => array(
+						array(
+							'taxonomy' => $tax,
+							'field'    => 'slug',
+							'terms'    => array( $term->slug ),
+						),
+					),
 				);
+
 				$posts = get_posts( $args );
 
-
-				$html = '';
+				$html  = '';
 				$total = 0;
 
 				// loop posts.
@@ -162,6 +174,10 @@ function igm_charities_meta( $meta ) {
 
 					$html .= sprintf( '<div>%1$s - %2$s</div>', $post->post_title, $metaval );
 
+				}
+
+				if ( $html === '' ) {
+					$html = 'No entries found';
 				}
 
 				$entry['value']          = $total;
