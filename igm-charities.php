@@ -172,7 +172,7 @@ function igm_charities_meta( $meta ) {
 					$metaval = $metaval / $totterms;
 					$total   = $total + $metaval;
 
-					$html .= sprintf( '<div>%1$s - %2$s</div>', $post->post_title, intval( $metaval ) );
+					$html .= sprintf( '<div class="igm_charity_row"><span class="igm_charity_name">%1$s</span> - <span class="igm_charity_value">$%2$s</span></div>', $post->post_title, number_format( intval( $metaval ) ) );
 
 				}
 
@@ -181,6 +181,7 @@ function igm_charities_meta( $meta ) {
 				}
 
 				$entry['value']          = intval( $total );
+				$entry['rawValue']       = strval( $total );
 				$entry['tooltipContent'] = $html;
 
 				if ( $action === 'open_url' ) {
